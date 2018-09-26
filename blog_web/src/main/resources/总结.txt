@@ -1,0 +1,238 @@
+一、Swagger2集成
+    第一步、添加依赖包
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger2</artifactId>
+                <version>2.8.0</version>
+            </dependency>
+            <dependency>
+                <groupId>io.springfox</groupId>
+                <artifactId>springfox-swagger-ui</artifactId>
+                <version>2.8.0</version>
+            </dependency>
+    第二步、Swagger的配置启动类编写
+           @Configuration
+           @EnableSwagger2
+           public class Swagger2 {
+
+               //swagger2的配置文件，这里可以配置swagger2的一些基本的内容，比如扫描的包等等
+               @Bean
+               public Docket createRestApi(){
+                   return new Docket(DocumentationType.SWAGGER_2)
+                           .apiInfo(apiInfo())
+                           .select()
+                           //为当前包路径
+                           .apis(RequestHandlerSelectors.basePackage("com.zhlh.blog.web.controller"))
+                           .paths(PathSelectors.any())
+                           .build();
+               }
+
+               private ApiInfo apiInfo(){
+                   return new ApiInfoBuilder()
+                           //页面标题
+                           .title("Spring Boot 使用Swagger2 构建RESTful API")
+                           //创建人
+                           .contact(new Contact("Lncui","http:www.baidu.com","957267908@qq.com"))
+                           //版本号
+                           .version("1.0")
+                           //描述
+                           .description("API描述")
+                           //服务条款网址
+                           .termsOfServiceUrl("http://www.baidu.com")
+                           .build();
+               }
+           }
+    第三步、API文档编写示例
+           @RestController
+           @RequestMapping("/api/hello")
+           @Api(value = "/api/hello",tags = "Hello接口模块")
+           public class HelloController extends BaseController{
+
+               @Autowired
+               HelloService helloService;
+               @ApiOperation(value = "根据条件查出部门列表",notes = "分页查询数据库中的部门列表")
+               @ApiImplicitParams({
+                       @ApiImplicitParam(name = "currentPage",value = "当前是第几页",required = true,dataType = "String",paramType = "path"),
+                       @ApiImplicitParam(name = "pageSize",value = "每页显示的记录数",required = true,dataType = "String",paramType = "path")
+               })
+               @RequestMapping(value = "/findDept/{currentPage}/{pageSize}",method = RequestMethod.GET)
+               public Object findDept(@PathVariable("currentPage")Integer currentPage,@PathVariable("pageSize")Integer pageSize){
+                   log.info("请求参数当前页{},每页显示的记录数{}",currentPage,pageSize);
+                   //设置分页信息，分别是当前页数和每页显示的总记录数【记住：必须在mapper接口中的方法执行之前设置该分页信息】
+                   PageHelper.startPage(currentPage, pageSize);
+                   List<Department> allItems = helloService.pageList(null);//全部数据
+                   int countNums = helloService.pageListCount(null);//总记录数
+                   PageBean<Department> pageData = new PageBean<Department>(currentPage, pageSize, countNums);
+                   pageData.setItems(allItems);
+                   log.info("返回数据{},{}",pageData,buildSuccJson(pageData));
+                   return buildSuccJson(pageData);
+               }
+           }
+    第四步、使用swagger来进行模拟测试：
+           http://localhost:8080/swagger-ui.html
+
+     Swagger注解
+      swagger通过注解表明该接口会生成文档，包括接口名、请求方法、参数、返回信息的等等。
+        @Api：修饰整个类，描述Controller的作用
+            如：@Api(value = "/api/hello",tags = "Hello接口模块")
+        @ApiOperation：描述一个类的一个方法，或者说一个接口
+            如：@ApiOperation(value = "根据条件查出部门列表",notes = "分页查询数据库中的部门列表")
+        @ApiParam：单个参数描述
+        @ApiModel：用对象来接收参数
+        @ApiProperty：用对象接收参数时，描述对象的一个字段
+        @ApiResponse：HTTP响应其中1个描述
+        @ApiResponses：HTTP响应整体描述
+        @ApiIgnore：使用该注解忽略这个API  如：@ApiIgnore
+        @ApiError ：发生错误返回的信息
+        @ApiImplicitParam：一个请求参数
+            如：@ApiImplicitParam(name = "id", value = "用户ID", required = true, dataType = "Integer", paramType = "path")
+        @ApiImplicitParams：多个请求参数
+            如：@ApiImplicitParams({
+                    @ApiImplicitParam(name = "currentPage",value = "当前是第几页",required = true,dataType = "String",paramType = "path"),
+                    @ApiImplicitParam(name = "pageSize",value = "每页显示的记录数",required = true,dataType = "String",paramType = "path")
+                })
+二、Druid集成
+    第一步、添加依赖包
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid</artifactId>
+            <version>1.1.8</version>
+        </dependency>
+    第二步、配置数据源
+        spring:
+          datasource:
+        #   数据源基本配置
+            url: jdbc:mysql://10.17.1.215:3306/mybatis?autoReconnect=true&useSSL=false
+            username: root
+            password: 123456
+            driver-class-name: com.mysql.jdbc.Driver
+            type: com.alibaba.druid.pool.DruidDataSource
+        #   数据源其他配置
+            initialSize: 5
+            minIdle: 5
+            maxActive: 20
+            maxWait: 60000
+            timeBetweenEvictionRunsMillis: 60000
+            minEvictableIdleTimeMillis: 300000
+            validationQuery: SELECT 1 FROM DUAL
+            testWhileIdle: true
+            testOnBorrow: false
+            testOnReturn: false
+            poolPreparedStatements: true
+        #   配置监控统计拦截的filters，去掉后监控界面sql无法统计，'wall'用于防火墙
+            filters: stat,wall,log4j
+            maxPoolPreparedStatementPerConnectionSize: 20
+            useGlobalDataSourceStat: true
+            connectionProperties: druid.stat.mergeSql=true;druid.stat.slowSqlMillis=500
+    第三步、配置监控统计功能(DruidConfig)
+        @Configuration
+        public class DruidConfig {
+
+            @ConfigurationProperties(prefix = "spring.datasource")
+            @Bean
+            public DataSource druid(){
+                return new DruidDataSource();
+            }
+
+            //配置Druid的监控
+            //1、配置一个管理后台的Servlet
+            @Bean
+            public ServletRegistrationBean statViewServlet(){
+                ServletRegistrationBean bean = new ServletRegistrationBean(new StatViewServlet(),"/druid/*");
+                Map<String,String> initParams = new HashMap<>();
+                initParams.put("loginUsername","admin");
+                initParams.put("loginPassword","123456");
+                initParams.put("allow","");//默认允许所有人访问
+                initParams.put("deny","192.168.22.11");
+                bean.setInitParameters(initParams);
+                return bean;
+            }
+
+            //2、配置一个web监控的filter
+            @Bean
+            public FilterRegistrationBean webStatFilter(){
+                FilterRegistrationBean bean = new FilterRegistrationBean();
+                bean.setFilter(new WebStatFilter());
+
+                Map<String,String> initParams = new HashMap<>();
+                initParams.put("exclusions","*.js,*.css,/druid/*");
+
+                bean.setInitParameters(initParams);
+
+                bean.setUrlPatterns(Arrays.asList("/*"));
+                return bean;
+            }
+        }
+    第四步、Durid测试
+        http://localhost:8080/druid/login.html
+
+三、MyBatis集成
+    第一步、添加依赖包
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+        </dependency>
+    第二步、修改启动类配置
+        @MapperScan("com.zhlh.blog.mapper")
+        @SpringBootApplication
+        public class BlogWebApplication {
+
+            public static void main(String[] args) {
+                SpringApplication.run(BlogWebApplication.class, args);
+            }
+        }
+    第三步、修改配置文件
+        # mybatis基本配置
+        mybatis:
+          config-location: classpath:mybatis/mybatis-config.xml
+          mapper-locations: classpath:mybatis/mapper/*.xml
+   第四步、创建文件并测试
+        创建Mapper接口文件、创建Mapper.xml文件、创建实体类、创建service层、单元测试
+
+四、PageHelper分页插件集成
+    第一步、添加依赖包
+        <!--mybatis分页插件-->
+        <dependency>
+            <groupId>com.github.pagehelper</groupId>
+            <artifactId>pagehelper</artifactId>
+            <version>${pagehelper.version}</version>
+        </dependency>
+    第二步、MybatisPageHelper的配置类编写
+        @Configuration
+        public class MyBatisConfig {
+            /**
+             * 注册MyBatis分页插件PageHelper
+             * @return
+             */
+            @Bean
+            public PageHelper pageHelper() {
+                System.out.println("MyBatisConfiguration.pageHelper()");
+                PageHelper pageHelper = new PageHelper();
+                Properties p = new Properties();
+                p.setProperty("offsetAsPageNum", "true");
+                p.setProperty("rowBoundsWithCount", "true");
+                p.setProperty("reasonable", "true");
+                pageHelper.setProperties(p);
+                return pageHelper;
+            }
+        }
+    第三步、Controller分页编写
+       @RequestMapping(value = "/findDept/{currentPage}/{pageSize}",method = RequestMethod.GET)
+        public Object findDept(@PathVariable("currentPage")Integer currentPage,@PathVariable("pageSize")Integer pageSize){
+            log.info("请求参数当前页{},每页显示的记录数{}",currentPage,pageSize);
+            //设置分页信息，分别是当前页数和每页显示的总记录数【记住：必须在mapper接口中的方法执行之前设置该分页信息】
+            PageHelper.startPage(currentPage, pageSize);
+            List<Department> allItems = helloService.pageList(null);//全部数据
+            int countNums = helloService.pageListCount(null);//总记录数
+            PageBean<Department> pageData = new PageBean<Department>(currentPage, pageSize, countNums);
+            pageData.setItems(allItems);
+            log.info("返回数据{},{}",pageData,buildSuccJson(pageData));
+            return buildSuccJson(pageData);
+        }
+    第三步、分页测试
+        http://localhost:8080/api/hello/findDept/1/2

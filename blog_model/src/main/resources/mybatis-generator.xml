@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>  
+<!DOCTYPE generatorConfiguration PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN" "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd" >  
+    
+    <generatorConfiguration>  
+
+		 <!-- 引入配置文件 -->  
+		<properties resource="application.properties"/>
+
+		<!-- 如果是用cmd方式运行 这里应该写url方式写全路径 因为找不到classpath 对于resource来说 -->
+        <!-- <properties url="file:///D:/mybatisgenerator/init.properties"/> -->
+
+        <!-- classPathEntry:数据库的JDBC驱动的jar包地址  -->
+        <classPathEntry location="${generator.classPath}"/>  
+        
+        <!-- 一个数据库一个context -->  
+        <context id="DB2Tables" targetRuntime="MyBatis3">
+
+		    <!-- 生成的Java文件的编码-->
+			<property name="javaFileEncoding" value="UTF-8"/>
+			<!-- 格式化java代码-->
+			<property name="javaFormatter" value="org.mybatis.generator.api.dom.DefaultJavaFormatter"/>
+			<!-- 格式化XML代码-->
+			<property name="xmlFormatter" value="org.mybatis.generator.api.dom.DefaultXmlFormatter"/>
+
+
+            <!-- 指定生成 Mapper 的继承模板 -->
+       <!--     <plugin type="tk.mybatis.mapper.generator.MapperPlugin">
+                <property name="mappers" value="${generator.mappers}" />
+                <property name="forceAnnotation" value="false"/>
+            </plugin>-->
+
+			<!-- Java模型生成equals和hashcode方法-->
+			<!--<plugin type="org.mybatis.generator.plugins.EqualsHashCodePlugin" />-->
+
+			<!-- 生成的Java模型类添加序列化接口-->
+			<!--<plugin type="org.mybatis.generator.plugins.SerializablePlugin" />-->
+
+			<!-- 生成的Java模型创建一个toString方法-->
+			<plugin type="org.mybatis.generator.plugins.ToStringPlugin" />
+
+            <commentGenerator >  
+                <property name="suppressAllComments" value="true"/><!-- 是否去除自动生成的注释 -->
+                <property name="suppressDate" value="true"/> <!-- 是否生成注释代时间戳-->
+            </commentGenerator>  
+            
+               <!-- 数据库连接的信息:驱动类、连接地址、用户名称、密码-->
+            <jdbcConnection driverClass="${jdbc_driver}" 
+			                connectionURL="${jdbc_url}" 
+							userId="${jdbc_user}" password="${jdbc_password}" />  
+              
+            <!-- 类型转换 -->  
+            <!-- 默认false,把JDBC DECIMAL 和 NUMERIC 类型解析为 Integer true, 把JDBC DECIMAL和NUMERIC 类型解析为 java.math.BigDecimal-->
+            <javaTypeResolver>  
+                <!-- 是否使用bigDecimal， false可自动转化以下类型（Long, Integer, Short, etc.） -->  
+                <property name="forceBigDecimals" value="false"/>  
+            </javaTypeResolver>  
+              
+            <!-- 生成实体类位置 -->    
+            <javaModelGenerator targetPackage="${javaModel_targetPackage}" targetProject="${generator.project}" >  
+                <!-- 是否在当前路径下新加一层schema,eg：fase路径demo.model， true:demo.model.[schemaName] -->  
+                <property name="enableSubPackages" value="false"/>  
+                <!-- 是否针对string类型的字段在set的时候进行trim调用 -->  
+                <property name="trimStrings" value="true"/>  
+            </javaModelGenerator>  
+              
+            <!-- 生成mapping.xml文件位置 -->  
+            <sqlMapGenerator targetPackage="${sqlMap_targetPackage}" targetProject="${sqlMap_targetProject}" >
+                <!-- 是否在当前路径下新加一层schema,eg：fase路径demo.mapping， true:demo.mapping.[schemaName] -->  
+                <property name="enableSubPackages" value="false" />  
+            </sqlMapGenerator>  
+              
+            <!-- 生成dao的位置，也就是接口dao -->      
+            <javaClientGenerator targetPackage="${javaClient_targetPackage}" targetProject="${generator.project}" type="XMLMAPPER" >
+                <!-- 是否在当前路径下新加一层schema,eg：fase路径demo.dao， true:demo.dao.[schemaName] -->  
+                <property name="enableSubPackages" value="false" />  
+            </javaClientGenerator>  
+              
+            <!-- 配置表信息 --> 
+            <!-- schema即为数据库名, tableName为对应的数据库表, domainObjectName是要生成的实体类, enable*ByExampl 是否生成 example类   -->      
+            <table schema="${jdbc.name}" tableName="department" domainObjectName="Department" enableCountByExample="false" enableDeleteByExample="false" enableSelectByExample="false" enableUpdateByExample="false" selectByExampleQueryId="false"/>
+            <!--<table schema="${jdbc.name}" tableName="fd_patient" domainObjectName="fdPatient" enableCountByExample="false" enableDeleteByExample="false" enableSelectByExample="false" enableUpdateByExample="false"/> -->   
+        </context>  
+    </generatorConfiguration>  
